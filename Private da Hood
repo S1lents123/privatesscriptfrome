@@ -1,0 +1,291 @@
+-- LocalScript → StarterPlayer → StarterPlayerScripts
+-- NOMBRE: GOD_2025_FINAL_CON_NUMERO_Y_ESP
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+print("GOD 2025 CARGADO - Pulsa K para menú")
+
+-- ================= CONFIG =================
+local Config = {
+    LOCK_KEY = Enum.KeyCode.V,
+    SMOOTH = 0.16,
+    PREDICTION = 0.0567,
+    ESP_ENABLED = true,
+    HITBOX_ENABLED = true,
+    HITBOX_SIZE = 20
+}
+-- =========================================
+
+local lockedPlayer = nil
+local gui = nil
+local menuOpen = false
+local waitingForKeybind = false
+
+-- ================= HITBOX EXPANDER =================
+local function expandHitbox(char)
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    
+    -- Limpiar anteriores
+    for _, v in pairs(char:GetDescendants()) do
+        if v.Name == "HitboxExpander" then v:Destroy() end
+    end
+
+    if not Config.HITBOX_ENABLED then return end
+
+    local parts = {"Head", "UpperTorso", "LowerTorso", "LeftUpperArm", "RightUpperArm", 
+                   "LeftLowerArm", "RightLowerArm", "LeftUpperLeg", "RightUpperLeg", 
+                   "LeftLowerLeg", "RightLowerLeg"}
+
+    for _, name in pairs(parts) do
+        local part = char:FindFirstChild(name)
+        if part then
+            local box = Instance.new("Part")
+            box.Name = "HitboxExpander"
+            box.Size = Vector3.new(Config.HITBOX_SIZE, Config.HITBOX_SIZE, Config.HITBOX_SIZE)
+            box.Transparency = 1
+            box.CanCollide = false
+            box.Anchored = false
+            box.Massless = true
+            box.Parent = part
+
+            local weld = Instance.new("WeldConstraint")
+            weld.Part0 = part
+            weld.Part1 = box
+            weld.Parent = part
+        end
+    end
+end
+
+-- Aplicar a todos
+for _, p in Players:GetPlayers() do
+    if p ~= player and p.Character then expandHitbox(p.Character) end
+    p.CharacterAdded:Connect(expandHitbox)
+end
+Players.PlayerAdded:Connect(function(p) p.CharacterAdded:Connect(expandHitbox) end)
+
+-- ================= ESP QUE SÍ FUNCIONA =================
+local function updateESP()
+    if not Config.ESP_ENABLED then return end
+    
+    for _, p in Players:GetPlayers() do
+        if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local root = p.Character.HumanoidRootPart
+            local pos, onScreen = camera:WorldToViewportPoint(root.Position)
+            
+            if onScreen then
+                if not p.Character:FindFirstChild("ESP_BOX") then
+                    local box = Instance.new("BoxHandleAdornment")
+                    box.Name = "ESP_BOX"
+                    box.Size = Vector3.new(5, 7, 5)
+                    box.Color3 = Color3.fromRGB(255, 0, 100)
+                    box.Transparency = 0.6
+                    box.AlwaysOnTop = true
+                    box.ZIndex = 10
+                    box.Adornee = p.Character
+                    box.Parent = p.Character
+                end
+            else
+                if p.Character:FindFirstChild("ESP_BOX") then
+                    p.Character.ESP_BOX:Destroy()
+                end
+            end
+        end
+    end
+end
+
+-- ================= LOCK AIMBOT =================
+local function aimLoop()
+    if lockedPlayer and lockedPlayer.Character and lockedPlayer.Character:FindFirstChild("Head") then
+        local head = lockedPlayer.Character.Head
+        camera.CFrame = camera.CFrame:Lerp(CFrame.new(camera.CFrame.Position, head.Position), Config.SMOOTH)
+    end
+end
+
+local function lockClosest()
+    local best = nil
+    local bestDist = 9999
+    for _, p in Players:GetPlayers() do
+        if p ~= player and p.Character and p.Character:FindFirstChild("Head") then
+            local head = p.Character.Head
+            local scr, on = camera:WorldToViewportPoint(head.Position)
+            if on then
+                local d = (Vector2.new(scr.X, scr.Y) - camera.ViewportSize/2).Magnitude
+                if d < bestDist then bestDist = d; best = p end
+            end
+        end
+    end
+    lockedPlayer = best
+end
+
+-- ================= MENÚ CON NÚMERO =================
+local function createMenu()
+    if gui then gui:Destroy() end
+    gui = Instance.new("ScreenGui")
+    gui.Name = "GOD2025"
+    gui.ResetOnSpawn = false
+    gui.Parent = player:WaitForChild("PlayerGui")
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 400, 0, 400)
+    frame.Position = UDim2.new(0.5, -200, 0.5, -200)
+    frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+    frame.Parent = gui
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0,20)
+
+    local title = Instance.new("TextLabel", frame)
+    title.Size = UDim2.new(1,0,0,60)
+    title.BackgroundTransparency = 1
+    title.Text = "GOD 2025"
+    title.TextColor3 = Color3.fromRGB(255,0,150)
+    title.Font = Enum.Font.GothamBlack
+    title.TextSize = 36
+
+    local lockBtn = Instance.new("TextButton", frame)
+    lockBtn.Size = UDim2.new(0.85,0,0,55)
+    lockBtn.Position = UDim2.new(0.075,0,0.18,0)
+    lockBtn.BackgroundColor3 = Color3.fromRGB(80,0,0)
+    lockBtn.Text = "Lock Aimbot: OFF"
+    lockBtn.TextColor3 = Color3.fromRGB(255,100,100)
+    lockBtn.Font = Enum.Font.GothamBold
+    lockBtn.TextSize = 26
+    Instance.new("UICorner", lockBtn).CornerRadius = UDim.new(0,14)
+
+    local espBtn = Instance.new("TextButton", frame)
+    espBtn.Size = UDim2.new(0.85,0,0,55)
+    espBtn.Position = UDim2.new(0.075,0,0.35,0)
+    espBtn.BackgroundColor3 = Color3.fromRGB(0,80,0)
+    espBtn.Text = "ESP: ON"
+    espBtn.TextColor3 = Color3.fromRGB(100,255,100)
+    espBtn.Font = Enum.Font.GothamBold
+    espBtn.TextSize = 26
+    Instance.new("UICorner", espBtn).CornerRadius = UDim.new(0,14)
+
+    local hitboxBtn = Instance.new("TextButton", frame)
+    hitboxBtn.Size = UDim2.new(0.85,0,0,55)
+    hitboxBtn.Position = UDim2.new(0.075,0,0.52,0)
+    hitboxBtn.BackgroundColor3 = Color3.fromRGB(100,0,0)
+    hitboxBtn.Text = "Hitbox Expander: ON"
+    hitboxBtn.TextColor3 = Color3.fromRGB(255,50,50)
+    hitboxBtn.Font = Enum.Font.GothamBold
+    hitboxBtn.TextSize = 26
+    Instance.new("UICorner", hitboxBtn).CornerRadius = UDim.new(0,14)
+
+    -- CAJA PARA ESCRIBIR EL TAMAÑO
+    local sizeBox = Instance.new("TextBox", frame)
+    sizeBox.Size = UDim2.new(0.85,0,0,50)
+    sizeBox.Position = UDim2.new(0.075,0,0.69,0)
+    sizeBox.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    sizeBox.Text = tostring(Config.HITBOX_SIZE)
+    sizeBox.TextColor3 = Color3.fromRGB(255,255,255)
+    sizeBox.Font = Enum.Font.Gotham
+    sizeBox.TextSize = 24
+    sizeBox.PlaceholderText = "Tamaño hitbox"
+    Instance.new("UICorner", sizeBox).CornerRadius = UDim.new(0,14)
+
+    sizeBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            local num = tonumber(sizeBox.Text)
+            if num and num >= 2 and num <= 20 then
+                Config.HITBOX_SIZE = num
+                sizeBox.Text = tostring(num)
+                for _, p in Players:GetPlayers() do
+                    if p ~= player and p.Character then expandHitbox(p.Character) end
+                end
+            else
+                sizeBox.Text = tostring(Config.HITBOX_SIZE)
+            end
+        end
+    end)
+
+    local keybindBtn = Instance.new("TextButton", frame)
+    keybindBtn.Size = UDim2.new(0.85,0,0,55)
+    keybindBtn.Position = UDim2.new(0.075,0,0.84,0)
+    keybindBtn.BackgroundColor3 = Color3.fromRGB(80,50,120)
+    keybindBtn.Text = "Bind: V"
+    keybindBtn.TextColor3 = Color3.fromRGB(0,255,255)
+    keybindBtn.Font = Enum.Font.Gotham
+    keybindBtn.TextSize = 26
+    Instance.new("UICorner", keybindBtn).CornerRadius = UDim.new(0,14)
+
+    -- DRAGGABLE
+    local dragging = false
+    local dragStart, startPos
+    frame.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = i.Position
+            startPos = frame.Position
+        end
+    end)
+    frame.InputChanged:Connect(function(i)
+        if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = i.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                                     startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    frame.InputEnded:Connect(function() dragging = false end)
+
+    -- BOTONES
+    lockBtn.MouseButton1Click:Connect(function()
+        Config.LOCK_ENABLED = not Config.LOCK_ENABLED
+        lockBtn.Text = "Lock Aimbot: "..(Config.LOCK_ENABLED and "ON" or "OFF")
+        lockBtn.TextColor3 = Config.LOCK_ENABLED and Color3.fromRGB(0,255,100) or Color3.fromRGB(255,100,100)
+    end)
+
+    espBtn.MouseButton1Click:Connect(function()
+        Config.ESP_ENABLED = not Config.ESP_ENABLED
+        espBtn.Text = "ESP: "..(Config.ESP_ENABLED and "ON" or "OFF")
+        espBtn.TextColor3 = Config.ESP_ENABLED and Color3.fromRGB(0,255,100) or Color3.fromRGB(255,100,100)
+    end)
+
+    hitboxBtn.MouseButton1Click:Connect(function()
+        Config.HITBOX_ENABLED = not Config.HITBOX_ENABLED
+        hitboxBtn.Text = "Hitbox Expander: "..(Config.HITBOX_ENABLED and "ON" or "OFF")
+        hitboxBtn.TextColor3 = Config.HITBOX_ENABLED and Color3.fromRGB(255,50,50) or Color3.fromRGB(100,100,100)
+        for _, p in Players:GetPlayers() do
+            if p ~= player and p.Character then expandHitbox(p.Character) end
+        end
+    end)
+
+    keybindBtn.MouseButton1Click:Connect(function()
+        waitingForKeybind = true
+        keybindBtn.Text = "PULSA TECLA"
+        keybindBtn.TextColor3 = Color3.fromRGB(255,255,0)
+    end)
+end
+
+-- ================= INPUTS =================
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+
+    if waitingForKeybind and input.KeyCode ~= Enum.KeyCode.Unknown then
+        Config.LOCK_KEY = input.KeyCode
+        if keybindBtn then
+            keybindBtn.Text = "Bind: "..input.KeyCode.Name
+            keybindBtn.TextColor3 = Color3.fromRGB(0,255,255)
+        end
+        waitingForKeybind = false
+        return
+    end
+
+    if input.KeyCode == Config.LOCK_KEY then
+        if lockedPlayer then lockedPlayer = nil else lockClosest() end
+    end
+
+    if input.KeyCode == Enum.KeyCode.K then
+        menuOpen = not menuOpen
+        if menuOpen then createMenu() else if gui then gui:Destroy() end end
+    end
+end)
+
+-- ================= INICIAR =================
+RunService.Heartbeat:Connect(aimLoop)
+RunService.Heartbeat:Connect(updateESP)
+
+print("GOD 2025 100% FUNCIONANDO | K = menú | Escribe número en la caja")
