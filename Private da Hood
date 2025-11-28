@@ -8,7 +8,7 @@ local player = Players.LocalPlayer
 
 -- CONFIG
 local Config = {
-    MenuKey = Enum.KeyCode.K,
+    MenuKey = Enum.KeyCode.L,
     AimbotKey = Enum.KeyCode.V,
     AimbotOn = false,
     Smooth = 0.133,
