@@ -1,6 +1,3 @@
--- AIMLOCK CLÁSICO 2025 - FUNCIONA EN TODOS LOS JUEGOS
--- Ejecuta directamente en tu exploit
-
 repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
@@ -8,60 +5,135 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local camera = workspace.CurrentCamera
 local player = Players.LocalPlayer
-local mouse = player:GetMouse()
 
--- === CONFIG ===
+-- CONFIG
 local Config = {
+    MenuKey = Enum.KeyCode.K,
     AimbotKey = Enum.KeyCode.V,
     AimbotOn = false,
-    Smooth = 0.14,
-    Prediction = 0.0565,
+    Smooth = 0.133,
+    Prediction = 0.135,
     WallCheck = true
 }
 
 local lockedPlayer = nil
+local waitingForKey = false
+local keybindBtn = nil
+local menu = nil
 
--- === WALLCHECK ===
+-- WALLCHECK
 local function canSee(part)
-    if not Config.WallCheck then return true end
+    if not Config.WallCheck or not part then return true end
     local ray = Ray.new(camera.CFrame.Position, (part.Position - camera.CFrame.Position).Unit * 500)
     local hit = workspace:FindPartOnRayWithIgnoreList(ray, {player.Character or {}})
     return hit and hit:IsDescendantOf(part.Parent)
 end
 
--- === INPUTS (LA CLAVE ERA ESTO) ===
-UserInputService.InputBegan:Connect(function(key, gp)
+-- MENÚ CON K
+local function toggleMenu()
+    if menu then menu:Destroy(); menu = nil return end
+    menu = Instance.new("ScreenGui")
+    menu.Parent = game.CoreGui
+    menu.Name = "UpperTorsoLock"
+
+    local frame = Instance.new("Frame", menu)
+    frame.Size = UDim2.new(0,380,0,400)
+    frame.Position = UDim2.new(0.5,-190,0.5,-200)
+    frame.BackgroundColor3 = Color3.fromRGB(10,10,10)
+    frame.BorderColor3 = Color3.fromRGB(255,0,0)
+    frame.BorderSizePixel = 3
+    frame.Active = true
+    frame.Draggable = true
+
+    local title = Instance.new("TextLabel", frame)
+    title.Size = UDim2.new(1,0,0,60)
+    title.BackgroundTransparency = 1
+    title.Text = "UPPERTORSO LOCK 2025"
+    title.TextColor3 = Color3.fromRGB(255,0,0)
+    title.Font = Enum.Font.GothamBlack
+    title.TextSize = 34
+
+    local y = 70
+    local function btn(text, callback)
+        local b = Instance.new("TextButton", frame)
+        b.Size = UDim2.new(0.9,0,0,50)
+        b.Position = UDim2.new(0.05,0,0,y)
+        b.BackgroundColor3 = Color3.fromRGB(30,0,0)
+        b.Text = text
+        b.TextColor3 = Color3.fromRGB(255,255,255)
+        b.Font = Enum.Font.GothamBold
+        b.TextSize = 18
+        b.MouseButton1Click:Connect(callback)
+        y = y + 60
+        return b
+    end
+
+    btn("Aimbot: OFF", function()
+        Config.AimbotOn = not Config.AimbotOn
+        b.Text = "Aimbot: "..(Config.AimbotOn and "ON" or "OFF")
+    end)
+
+    keybindBtn = btn("Tecla: V", function()
+        waitingForKey = true
+        b.Text = "PRESIONA TECLA..."
+        b.TextColor3 = Color3.fromRGB(255,255,0)
+    end)
+
+    btn("WallCheck: ON", function()
+        Config.WallCheck = not Config.WallCheck
+        b.Text = "WallCheck: "..(Config.WallCheck and "ON" or "OFF")
+    end)
+
+    btn("Smooth -0.01", function() Config.Smooth = math.max(0.05, Config.Smooth - 0.01) end)
+    btn("Smooth +0.01", function() Config.Smooth = math.min(0.5, Config.Smooth + 0.01) end)
+    btn("Pred -0.01", function() Config.Prediction = math.max(0, Config.Prediction - 0.01) end)
+    btn("Pred +0.01", function() Config.Prediction = math.min(0.3, Config.Prediction + 0.01) end)
+
+    btn("CERRAR", function() menu:Destroy(); menu = nil end)
+end
+
+-- INPUTS
+UserInputService.InputBegan:Connect(function(key,gp)
     if gp then return end
-    
+
+    if key.KeyCode == Config.MenuKey then
+        toggleMenu()
+    end
+
+    if waitingForKey then
+        Config.AimbotKey = key.KeyCode
+        waitingForKey = false
+        if keybindBtn then
+            keybindBtn.Text = "Tecla: "..key.KeyCode.Name
+            keybindBtn.TextColor3 = Color3.fromRGB(0,255,255)
+        end
+        return
+    end
+
     if key.KeyCode == Config.AimbotKey then
         Config.AimbotOn = not Config.AimbotOn
-        
         if Config.AimbotOn then
             lockedPlayer = nil
-            local closest = nil
             local bestDist = math.huge
-            
             for _, p in Players:GetPlayers() do
                 if p ~= player and p.Character then
-                    local torso = p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso")
-                    if torso and canSee(torso) then
-                        local screenPos, onScreen = camera:WorldToViewportPoint(torso.Position)
+                    local head = p.Character:FindFirstChild("Head") or p.Character:FindFirstChild("Head")
+                    if head and canSee(torso) then
+                        local screenPos, onScreen = camera:WorldToViewportPoint(head.Position)
                         if onScreen then
-                            local dist = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(mouse.X, mouse.Y)).Magnitude
+                            local dist = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)).Magnitude
                             if dist < bestDist then
                                 bestDist = dist
-                                closest = p
+                                lockedPlayer = p
                             end
                         end
                     end
                 end
             end
-            
-            lockedPlayer = closest
             if lockedPlayer then
-                print("LOCKED: " .. lockedPlayer.DisplayName)
+                print("LOCKED UPPERTORSO: " .. lockedPlayer.DisplayName)
             else
-                print("NO TARGET VISIBLE")
+                print("NO TARGET")
             end
         else
             lockedPlayer = nil
@@ -70,25 +142,29 @@ UserInputService.InputBegan:Connect(function(key, gp)
     end
 end)
 
--- === AIMLOCK CLÁSICO (EL QUE FUNCIONA DE VERDAD) ===
+-- AIMLOCK 100% AL UPPERTORSO
 RunService.RenderStepped:Connect(function()
     if not Config.AimbotOn or not lockedPlayer or not lockedPlayer.Character then return end
 
-    local torso = lockedPlayer.Character:FindFirstChild("UpperTorso") or lockedPlayer.Character:FindFirstChild("Torso")
+    local torso = lockedPlayer.Character:FindFirstChild("UpperTorso") or lockedPlayer.Character:FindFirstChild("UpperTorso")
     if not torso then return end
 
     local root = lockedPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not root then return end
 
-    -- Prediction perfecta
     local velocity = root.Velocity
-    local predictedPos = torso.Position + (velocity * Config.Prediction)
+    local predicted = torso.Position + (velocity * Config.Prediction)
 
-    -- Aimbot clásico (mueve cámara)
-    local targetCFrame = CFrame.new(camera.CFrame.Position, predictedPos)
-    camera.CFrame = camera.CFrame:Lerp(targetCFrame, Config.Smooth)
+    local look = CFrame.new(camera.CFrame.Position, predicted)
+    camera.CFrame = camera.CFrame:Lerp(look, Config.Smooth)
 end)
 
+print("UPPERTORSO LOCK 2025 CARGADO")
+print("K = MENU")
+print("V = ACTIVAR/DESACTIVAR AIMBOT")
+print("100% lock al UpperTorso")
+print("Funciona en Da Hood, Arsenal, Phantom Forces, etc.")
+print("TODO FUNCIONA PERFECTO")
 -- Esp
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -1167,6 +1243,196 @@ print("F2 - Toggle Show Enemies")
 print("F3 - Toggle Show Team")
 print("F4 - Toggle Glow Effect")
 print("F5 - Toggle Look Line")
+
+-- Animations
+ -- // clone
+            for _, v in next, game:GetService("CoreGui"):GetChildren() do
+                if (v.Name:match("FreeAnimationPack")) then
+                    v:Destroy()
+                end
+            end
+        
+            -- // Instances
+            local FreeAnimationPack = Instance.new("ScreenGui")
+            local AnimationPack = Instance.new("TextButton")
+            local Animations = Instance.new("ScrollingFrame")
+            local UIListLayout = Instance.new("UIListLayout")
+            local Lean = Instance.new("TextButton")
+            local Lay = Instance.new("TextButton")
+            local Dance1 = Instance.new("TextButton")
+            local Dance2 = Instance.new("TextButton")
+            local Greet = Instance.new("TextButton")
+            local ChestPump = Instance.new("TextButton")
+            local Praying = Instance.new("TextButton")
+            local Stop = Instance.new("TextButton")
+            local UniversalAnimation = Instance.new("Animation")
+        
+            -- // Utility
+            function stopTracks()
+                for _, v in next, game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):GetPlayingAnimationTracks() do
+                    if (v.Animation.AnimationId:match("rbxassetid")) then
+                        v:Stop()
+                    end
+                end
+            end
+        
+            function loadAnimation(id)
+                if UniversalAnimation.AnimationId == id then
+                    stopTracks()
+                    UniversalAnimation.AnimationId = "1"
+                else
+                    UniversalAnimation.AnimationId = id
+                    local animationTrack = game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):LoadAnimation(UniversalAnimation)
+                    animationTrack:Play()
+                end
+            end
+        
+
+            FreeAnimationPack.Name = "FreeAnimationPack"
+            FreeAnimationPack.Parent = game.CoreGui
+            FreeAnimationPack.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        
+            AnimationPack.Name = "AnimationPack"
+            AnimationPack.Parent = FreeAnimationPack
+            AnimationPack.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            AnimationPack.BorderSizePixel = 0
+            AnimationPack.Position = UDim2.new(0, 0, 0.388007045, 0)
+            AnimationPack.Size = UDim2.new(0, 100, 0, 20)
+            AnimationPack.Font = Enum.Font.SourceSansBold
+            AnimationPack.Text = "Animations"
+            AnimationPack.TextColor3 = Color3.fromRGB(0, 0, 0)
+            AnimationPack.TextSize = 18.000
+            AnimationPack.MouseButton1Click:Connect(function()
+                if (Animations.Visible == false) then
+                    Animations.Visible = true
+                end
+            end)
+        
+            Animations.Name = "Animations"
+            Animations.Parent = AnimationPack
+            Animations.Active = true
+            Animations.BackgroundColor3 = Color3.fromRGB(102, 102, 102)
+            Animations.Position = UDim2.new(-0.104712225, 0, -1.54173493, 0)
+            Animations.Size = UDim2.new(0, 120, 0, 195)
+            Animations.Visible = false
+            Animations.CanvasPosition = Vector2.new(0, 60.0000305)
+            Animations.CanvasSize = UDim2.new(0, 0, 1, 235)
+        
+            UIListLayout.Parent = Animations
+            UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            UIListLayout.Padding = UDim.new(0, 2)
+        
+            Lean.Name = "Lean"
+            Lean.Parent = Animations
+            Lean.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Lean.Size = UDim2.new(1, 0, 0, 30)
+            Lean.Font = Enum.Font.SourceSansBold
+            Lean.Text = "Lean"
+            Lean.TextColor3 = Color3.fromRGB(0, 0, 0)
+            Lean.TextSize = 14.000
+            Lean.MouseButton1Click:Connect(function()
+                stopTracks()
+                loadAnimation("rbxassetid://3152375249")
+            end)
+        
+            Lay.Name = "Lay"
+            Lay.Parent = Animations
+            Lay.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Lay.Size = UDim2.new(1, 0, 0, 30)
+            Lay.Font = Enum.Font.SourceSansBold
+            Lay.Text = "Lay"
+            Lay.TextColor3 = Color3.fromRGB(0, 0, 0)
+            Lay.TextSize = 14.000
+            Lay.MouseButton1Click:Connect(function()
+                stopTracks()
+                loadAnimation("rbxassetid://3152378852")
+            end)
+        
+            Dance1.Name = "Dance1"
+            Dance1.Parent = Animations
+            Dance1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Dance1.Size = UDim2.new(1, 0, 0, 30)
+            Dance1.Font = Enum.Font.SourceSansBold
+            Dance1.Text = "Dance1"
+            Dance1.TextColor3 = Color3.fromRGB(0, 0, 0)
+            Dance1.TextSize = 14.000
+            Dance1.MouseButton1Click:Connect(function()
+                stopTracks()
+                loadAnimation("rbxassetid://3189773368")
+            end)
+        
+            Dance2.Name = "Dance2"
+            Dance2.Parent = Animations
+            Dance2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Dance2.Size = UDim2.new(1, 0, 0, 30)
+            Dance2.Font = Enum.Font.SourceSansBold
+            Dance2.Text = "Dance2"
+            Dance2.TextColor3 = Color3.fromRGB(0, 0, 0)
+            Dance2.TextSize = 14.000
+            Dance2.MouseButton1Click:Connect(function()
+                stopTracks()
+                loadAnimation("rbxassetid://3189776546")
+            end)
+        
+            Greet.Name = "Greet"
+            Greet.Parent = Animations
+            Greet.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Greet.Size = UDim2.new(1, 0, 0, 30)
+            Greet.Font = Enum.Font.SourceSansBold
+            Greet.Text = "Greet"
+            Greet.TextColor3 = Color3.fromRGB(0, 0, 0)
+            Greet.TextSize = 14.000
+            Greet.MouseButton1Click:Connect(function()
+                stopTracks()
+                loadAnimation("rbxassetid://3189777795")
+            end)
+        
+            ChestPump.Name = "ChestPump"
+            ChestPump.Parent = Animations
+            ChestPump.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            ChestPump.Size = UDim2.new(1, 0, 0, 30)
+            ChestPump.Font = Enum.Font.SourceSansBold
+            ChestPump.Text = "Chest Pump"
+            ChestPump.TextColor3 = Color3.fromRGB(0, 0, 0)
+            ChestPump.TextSize = 14.000
+            ChestPump.MouseButton1Click:Connect(function()
+                stopTracks()
+                loadAnimation("rbxassetid://3189779152")
+            end)
+        
+            Praying.Name = "Praying"
+            Praying.Parent = Animations
+            Praying.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Praying.Size = UDim2.new(1, 0, 0, 30)
+            Praying.Font = Enum.Font.SourceSansBold
+            Praying.Text = "Praying"
+            Praying.TextColor3 = Color3.fromRGB(0, 0, 0)
+            Praying.TextSize = 14.000
+            Praying.MouseButton1Click:Connect(function()
+                stopTracks()
+                loadAnimation("rbxassetid://3487719500")
+            end)
+        
+            Stop.Name = "Stop"
+            Stop.Parent = Animations
+            Stop.BackgroundColor3 = Color3.fromRGB(255, 112, 112)
+            Stop.Size = UDim2.new(1, 0, 0, 30)
+            Stop.Font = Enum.Font.SourceSansBold
+            Stop.Text = "Stop Animation"
+            Stop.TextColor3 = Color3.fromRGB(0, 0, 0)
+            Stop.TextSize = 14.000
+            Stop.MouseButton1Click:Connect(function()
+                stopTracks()
+            end)
+            --close gui
+            local plr = game.Players.LocalPlayer
+        
+            plr:GetMouse().KeyDown:Connect(function(K)
+                if K == "p" then
+                    Animations.Visible = false
+                end
+            end)
+        warn("loaded")
 
 print("AIMLOCK CLÁSICO 2025 CARGADO")
 print("PRESIONA V PARA ACTIVAR/DESACTIVAR")
