@@ -2723,19 +2723,48 @@ AnimationPack(game.Players.LocalPlayer.Character)
 game.Players.LocalPlayer.CharacterAdded:Connect(AnimationPack)
 
 -- zombie
-while true do
-local Animate = game.Players.LocalPlayer.Character.Animate
-Animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id=616158929"
-Animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id=616160636"
-Animate.walk.WalkAnim.AnimationId = "http://www.roblox.com/asset/?id=616168032"
-Animate.run.RunAnim.AnimationId = "http://www.roblox.com/asset/?id=616163682"
-Animate.jump.JumpAnim.AnimationId = "http://www.roblox.com/asset/?id=1083455352"
-Animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id=1083439238"
-Animate.fall.FallAnim.AnimationId = "http://www.roblox.com/asset/?id=1083443587"
-game.Players.LocalPlayer.Character.Humanoid.Jump = false
-wait(1)
+-- LocalScript (colócalo en StarterPlayerScripts)
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- Tus IDs de animaciones personalizadas
+local animIds = {
+    idle1 = "616158929",
+    idle2 = "616160636",
+    walk  = "616168032",
+    run   = "616163682",
+    jump  = "1083455352",
+    climb = "1083439238",
+    fall  = "1083443587",
+}
+
+local function aplicarAnimaciones(character)
+    local humanoid = character:WaitForChild("Humanoid")
+    local animate = character:WaitForChild("Animate")
+    
+    -- Esperamos un poquito por si Roblox todavía está cargando el Animate script
+    task.wait(0.5)
+    
+    -- Cambiamos todas las animaciones
+    animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id="..animIds.idle1
+    animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id="..animIds.idle2
+    animate.walk.WalkAnim.AnimationId  = "http://www.roblox.com/asset/?id="..animIds.walk
+    animate.run.RunAnim.AnimationId    = "http://www.roblox.com/asset/?id="..animIds.run
+    animate.jump.JumpAnim.AnimationId  = "http://www.roblox.com/asset/?id="..animIds.jump
+    animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id="..animIds.climb
+    animate.fall.FallAnim.AnimationId  = "http://www.roblox.com/asset/?id="..animIds.fall
+    
+    print("Animaciones personalizadas aplicadas!")
 end
 
+-- Aplicamos cuando el personaje aparece por primera vez
+if player.Character then
+    aplicarAnimaciones(player.Character)
+end
+
+-- Y cada vez que reaparezca (al morir y respawnear)
+player.CharacterAdded:Connect(aplicarAnimaciones)
 print("AIMLOCK CLÁSICO 2025 CARGADO")
 print("PRESIONA V PARA ACTIVAR/DESACTIVAR")
 print("Apunta al UpperTorso + Prediction + Smooth")
