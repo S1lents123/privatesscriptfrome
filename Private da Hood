@@ -117,8 +117,8 @@ UserInputService.InputBegan:Connect(function(key,gp)
             local bestDist = math.huge
             for _, p in Players:GetPlayers() do
                 if p ~= player and p.Character then
-                    local head = p.Character:FindFirstChild("Head") or p.Character:FindFirstChild("Head")
-                    if head and canSee(torso) then
+                    local head = p.Character:FindFirstChild("Uppertorso") or p.Character:FindFirstChild("Uppertorso")
+                    if head and canSee(Uppertorso) then
                         local screenPos, onScreen = camera:WorldToViewportPoint(head.Position)
                         if onScreen then
                             local dist = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)).Magnitude
@@ -153,7 +153,7 @@ RunService.RenderStepped:Connect(function()
     if not root then return end
 
     local velocity = root.Velocity
-    local predicted = torso.Position + (velocity * Config.Prediction)
+    local predicted = uppertorso.Position + (velocity * Config.Prediction)
 
     local look = CFrame.new(camera.CFrame.Position, predicted)
     camera.CFrame = camera.CFrame:Lerp(look, Config.Smooth)
