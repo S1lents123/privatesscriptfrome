@@ -2723,76 +2723,50 @@ AnimationPack(game.Players.LocalPlayer.Character)
 game.Players.LocalPlayer.CharacterAdded:Connect(AnimationPack)
 
 -- zombie
+-- ANIMACIONES PERFECTAS OHIO/DA HOOD 2025
+-- PEGA ESTO EN TU EXECUTOR Y YA ESTÁ
+-- Se mantiene al morir + se ven PERFECTAS para todos
 
--- ANIMACIONES PERSONALIZADAS PERFECTAS + SE MANTIENE AL MORIR + SE VE BIEN PARA TODOS
--- LocalScript → Ponlo en StarterPlayer → StarterPlayerScripts
+repeat task.wait() until game.Players.LocalPlayer.Character
 
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
+local player = game.Players.LocalPlayer
 
--- Tus IDs (los mejores de Da Hood / Ohio)
-local Animaciones = {
-    Idle1 = "616158929",
-    Idle2 = "616160636",
-    Walk  = "616168032",
-    Run   = "616163682",
-    Jump  = "1083455352",
-    Climb = "1083439238",
-    Fall  = "1083443587"
+local anims = {
+    ["idle"] = {
+        {id = "616158929", weight = 1},
+        {id = "616160636", weight = 9}
+    },
+    ["walk"] = {id = "616168032"},
+    ["run"] = {id = "616163682"},
+    ["jump"] = {id = "1083455352"},
+    ["climb"] = {id = "1083439238"},
+    ["fall"] = {id = "1083443587"}
 }
 
-local function aplicarAnimaciones(character)
-    local humanoid = character:WaitForChild("Humanoid")
-    local animate = character:WaitForChild("Animate")
+local function aplicar()
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hum = char:WaitForChild("Humanoid")
+    local animate = char:WaitForChild("Animate")
 
-    -- Esperamos un poquito a que el Animate esté completamente cargado
-    task.wait(1)
+    task.wait(1) -- importante
 
-    -- Aquí está la clave: cambiamos el AssetId directamente (esto se replica al servidor)
-    animate.idle.Animation1.AnimationId = "rbxassetid://" .. Animaciones.Idle1
-    animate.idle.Animation2.AnimationId = "rbxassetid://" .. Animaciones.Idle2
-    animate.walk.WalkAnim.AnimationId   = "rbxassetid://" .. Animaciones.Walk
-    animate.run.RunAnim.AnimationId     = "rbxassetid://" .. Animaciones.Run
-    animate.jump.JumpAnim.AnimationId   = "rbxassetid://" .. Animaciones.Jump
-    animate.climb.ClimbAnim.AnimationId = "rbxassetid://" .. Animaciones.Climb
-    animate.fall.FallAnim.AnimationId   = "rbxassetid://" .. Animaciones.Fall
+    -- ESTE ES EL MÉTODO QUE FUNCIONA EN TODOS LOS EXECUTORES
+    animate.idle.Animation1.AnimationId = "rbxassetid://"..anims.idle[1].id
+    animate.idle.Animation2.AnimationId = "rbxassetid://"..anims.idle[2].id
+    animate.walk.WalkAnim.AnimationId   = "rbxassetid://"..anims.walk.id
+    animate.run.RunAnim.AnimationId     = "rbxassetid://"..anims.run.id
+    animate.jump.JumpAnim.AnimationId   = "rbxassetid://"..anims.jump.id
+    animate.climb.ClimbAnim.AnimationId = "rbxassetid://"..anims.climb.id
+    animate.fall.FallAnim.AnimationId   = "rbxassetid://"..anims.fall.id
 
-    -- Opcional: evita que saltes sin querer
-    humanoid.JumpPower = 50
-    humanoid.Jump = false
-
-    print("Animaciones personalizadas aplicadas correctamente (se ven bien para todos)")
+    print("ANIMACIONES PERFECTAS CARGADAS")
 end
 
--- Aplicar cuando aparezca el personaje por primera vez
-if player.Character then
-    aplicarAnimaciones(player.Character)
-end
+-- Primera vez
+aplicar()
 
--- Y cada vez que mueras y reaparezas
-player.CharacterAdded:Connect(aplicarAnimaciones)
-    
-    -- Cambiamos todas las animaciones
-    animate.idle.Animation1.AnimationId = "http://www.roblox.com/asset/?id="..animIds.idle1
-    animate.idle.Animation2.AnimationId = "http://www.roblox.com/asset/?id="..animIds.idle2
-    animate.walk.WalkAnim.AnimationId  = "http://www.roblox.com/asset/?id="..animIds.walk
-    animate.run.RunAnim.AnimationId    = "http://www.roblox.com/asset/?id="..animIds.run
-    animate.jump.JumpAnim.AnimationId  = "http://www.roblox.com/asset/?id="..animIds.jump
-    animate.climb.ClimbAnim.AnimationId = "http://www.roblox.com/asset/?id="..animIds.climb
-    animate.fall.FallAnim.AnimationId  = "http://www.roblox.com/asset/?id="..animIds.fall
-    
-    print("Animaciones personalizadas aplicadas!")
-end
-
--- Aplicamos cuando el personaje aparece por primera vez
-if player.Character then
-    aplicarAnimaciones(player.Character)
-end
-
--- Y cada vez que reaparezca (al morir y respawnear)
-player.CharacterAdded:Connect(aplicarAnimaciones)
-print("AIMLOCK CLÁSICO 2025 CARGADO")
-print("PRESIONA V PARA ACTIVAR/DESACTIVAR")
-print("Apunta al UpperTorso + Prediction + Smooth")
-print("Wallcheck activado")
-print("FUNCIONA EN TODOS LOS JUEGOS")
+-- Cada vez que mueras
+player.CharacterAdded:Connect(function()
+    task.wait(2)
+    aplicar()
+end)
