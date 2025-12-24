@@ -19,7 +19,7 @@ local Config = {
     Smooth = 0.3,
     Prediction = 0.0456,
     WallCheck = true,      -- AQUÍ ESTÁ EL WALLCHECK CORREGIDO
-    TeamCheck = true,      -- No lockea a tu equipo
+    TeamCheck = false,      -- No lockea a tu equipo
     BlendHeadTorso = 0.5   -- 0 = torso | 0.5 = mitad | 1 = cabeza
 }
 
