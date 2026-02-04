@@ -17,8 +17,8 @@ local mouse = player:GetMouse()
 local Config = {
     AimbotKey = Enum.KeyCode.V,
     Smooth = 0,
-    Prediction = 0.0456,
-    WallCheck = true,      -- AQUÍ ESTÁ EL WALLCHECK CORREGIDO
+    Prediction = 0,
+    WallCheck = false,      -- AQUÍ ESTÁ EL WALLCHECK CORREGIDO
     TeamCheck = false,      -- No lockea a tu equipo
     BlendHeadTorso = 0.5   -- 0 = torso | 0.5 = mitad | 1 = cabeza
 }
